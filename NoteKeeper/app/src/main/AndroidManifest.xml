@@ -23,6 +23,9 @@
             android:name=".NoteActivity"
             android:label="@string/note_activity_name"
             android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="@string/view_note_into_action" />
+            </intent-filter>
         </activity>
     </application>
 

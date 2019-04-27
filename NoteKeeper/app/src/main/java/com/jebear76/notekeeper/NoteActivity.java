@@ -2,6 +2,7 @@ package com.jebear76.notekeeper;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -14,8 +15,15 @@ import java.util.List;
 
 public class NoteActivity extends AppCompatActivity {
     public static final String NOTE_INFO = "com.jebear76.notekeeper.NOTE_INFO";
+    public static final String NOTE_POSITION = "com.jebear76.notekeeper.NOTE_POSITION";
+    public static final int POSITION_NOT_SET = -1;
     private NoteInfo noteInfo;
     private boolean isNewNote;
+    private Spinner spinnerCourses;
+    private EditText textTitle;
+    private EditText textBody;
+    private int position;
+    private boolean isCancelling;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,7 +31,7 @@ public class NoteActivity extends AppCompatActivity {
         setContentView(R.layout.activity_note);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        Spinner spinnerCourses = (Spinner) findViewById(R.id.spinner_courses);
+        spinnerCourses = (Spinner) findViewById(R.id.spinner_courses);
         List<CourseInfo> courses = DataManager.getInstance().getCourses();
         ArrayAdapter<CourseInfo> adapterCourses = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, courses);
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -31,8 +39,8 @@ public class NoteActivity extends AppCompatActivity {
 
         readDisplayStateValues();
 
-        EditText textTitle = findViewById(R.id.editText_note_title);
-        EditText textBody = findViewById(R.id.editText_note_body);
+        textTitle = findViewById(R.id.editText_note_title);
+        textBody = findViewById(R.id.editText_note_body);
 
         if (!isNewNote) {
             textTitle.setText(noteInfo.getTitle());
@@ -45,8 +53,13 @@ public class NoteActivity extends AppCompatActivity {
 
     private void readDisplayStateValues() {
         Intent intent = getIntent();
-        noteInfo = intent.getParcelableExtra(NoteActivity.NOTE_INFO);
-        isNewNote = noteInfo == null;
+        //noteInfo = intent.getParcelableExtra(NoteActivity.NOTE_INFO);
+        position = intent.getIntExtra(NoteActivity.NOTE_POSITION, POSITION_NOT_SET);
+        isNewNote = position == POSITION_NOT_SET;
+        if(isNewNote){
+            position = DataManager.getInstance().createNewNote();
+        }
+        noteInfo = DataManager.getInstance().getNotes().get(position);
     }
 
     @Override
@@ -64,10 +77,30 @@ public class NoteActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        if (id == R.id.menu_action_cancel) {
+            isCancelling = true;
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if(isCancelling){
+            if(isNewNote){
+                DataManager.getInstance().removeNote(position);
+            }
+            return;
+        }
+        saveNote();
+
+    }
+
+    private void saveNote() {
+        noteInfo.setCourse((CourseInfo) spinnerCourses.getSelectedItem());
+        noteInfo.setTitle(textTitle.getText().toString());
+        noteInfo.setText(textBody.getText().toString());
     }
 }
