@@ -2,7 +2,8 @@ package com.jebear76.notekeeper;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.provider.ContactsContract;
+import android.os.PersistableBundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -24,6 +25,7 @@ public class NoteActivity extends AppCompatActivity {
     private EditText textBody;
     private int position;
     private boolean isCancelling;
+    private NoteInfo originalNoteInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +40,11 @@ public class NoteActivity extends AppCompatActivity {
         spinnerCourses.setAdapter(adapterCourses);
 
         readDisplayStateValues();
+        if(savedInstanceState == null){
+            saveOriginalNote();
+        }else{
+            restoreOriginalNoteInfo(savedInstanceState);
+        }
 
         textTitle = findViewById(R.id.editText_note_title);
         textBody = findViewById(R.id.editText_note_body);
@@ -51,12 +58,22 @@ public class NoteActivity extends AppCompatActivity {
         }
     }
 
+    private void restoreOriginalNoteInfo(Bundle savedInstanceState) {
+        originalNoteInfo = savedInstanceState.getParcelable(NOTE_INFO);
+    }
+
+    private void saveOriginalNote() {
+        if (isNewNote)
+            return;
+        originalNoteInfo = new NoteInfo(noteInfo);
+    }
+
     private void readDisplayStateValues() {
         Intent intent = getIntent();
         //noteInfo = intent.getParcelableExtra(NoteActivity.NOTE_INFO);
         position = intent.getIntExtra(NoteActivity.NOTE_POSITION, POSITION_NOT_SET);
         isNewNote = position == POSITION_NOT_SET;
-        if(isNewNote){
+        if (isNewNote) {
             position = DataManager.getInstance().createNewNote();
         }
         noteInfo = DataManager.getInstance().getNotes().get(position);
@@ -76,6 +93,11 @@ public class NoteActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
+        if (id == R.id.menu_action_send_mail) {
+            isCancelling = true;
+
+            sendEmail();
+        }
         //noinspection SimplifiableIfStatement
         if (id == R.id.menu_action_cancel) {
             isCancelling = true;
@@ -85,15 +107,28 @@ public class NoteActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void sendEmail() {
+        String subject = "Check this out \"" + ((CourseInfo)spinnerCourses.getSelectedItem()).getTitle() + "\"" ;
+        String body = textTitle.getText().toString() + "\n" + textBody.getText().toString();
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("message/rfc2822");
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject);
+        intent.putExtra(Intent.EXTRA_TEXT, body);
+        startActivity(intent);
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
-        if(isCancelling){
-            if(isNewNote){
+        if (isCancelling) {
+            if (isNewNote) {
                 DataManager.getInstance().removeNote(position);
+            } else {
+                noteInfo = originalNoteInfo;
             }
             return;
         }
+
         saveNote();
 
     }
@@ -102,5 +137,11 @@ public class NoteActivity extends AppCompatActivity {
         noteInfo.setCourse((CourseInfo) spinnerCourses.getSelectedItem());
         noteInfo.setTitle(textTitle.getText().toString());
         noteInfo.setText(textBody.getText().toString());
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(NOTE_INFO, originalNoteInfo);
     }
 }

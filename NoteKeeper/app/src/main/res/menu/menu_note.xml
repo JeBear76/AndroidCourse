@@ -3,7 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.jebear76.notekeeper.NoteActivity">
     <item
+        android:id="@+id/menu_action_send_mail"
+        android:icon="@android:drawable/sym_action_email"
+        android:title="Email Note" />
+    <item
         android:id="@+id/menu_action_cancel"
+        android:icon="@android:drawable/ic_menu_close_clear_cancel"
         android:orderInCategory="101"
         android:title="@android:string/cancel" />
 </menu>
