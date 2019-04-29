@@ -3,7 +3,6 @@ package com.jebear76.notekeeper;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -15,7 +14,7 @@ import java.util.List;
 
 public class NoteListActivity extends AppCompatActivity {
 
-    private ArrayAdapter<NoteInfo> adapterNotes;
+    private ArrayAdapter<NoteInfo> _noteInfoArrayAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,7 +39,7 @@ public class NoteListActivity extends AppCompatActivity {
     @Override
     protected void onPostResume() {
         super.onPostResume();
-        adapterNotes.notifyDataSetChanged();
+        _noteInfoArrayAdapter.notifyDataSetChanged();
     }
 
     private void initializeDisplayContent() {
@@ -48,9 +47,9 @@ public class NoteListActivity extends AppCompatActivity {
 
         List<NoteInfo> notes = DataManager.getInstance().getNotes();
 
-        adapterNotes = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1, notes);
+        _noteInfoArrayAdapter = new ArrayAdapter<>(this,android.R.layout.simple_list_item_1, notes);
 
-        listNotes.setAdapter(adapterNotes);
+        listNotes.setAdapter(_noteInfoArrayAdapter);
 
         listNotes.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override

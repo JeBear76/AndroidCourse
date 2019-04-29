@@ -5,10 +5,12 @@
     <item
         android:id="@+id/menu_action_send_mail"
         android:icon="@android:drawable/sym_action_email"
-        android:title="Email Note" />
+        android:title="Email Note"
+        app:showAsAction="always" />
     <item
         android:id="@+id/menu_action_cancel"
         android:icon="@android:drawable/ic_menu_close_clear_cancel"
         android:orderInCategory="101"
-        android:title="@android:string/cancel" />
+        android:title="@android:string/cancel"
+        app:showAsAction="always" />
 </menu>
