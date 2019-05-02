@@ -2,6 +2,7 @@ package com.jebear76.notekeeper;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -15,6 +16,7 @@ import android.widget.ListView;
 import java.util.List;
 
 public class NoteListActivity extends AppCompatActivity {
+    private NoteRecyclerAdapter _noteRecyclerAdapter;
 
     //private ArrayAdapter<NoteInfo> _noteInfoArrayAdapter;
 
@@ -42,6 +44,8 @@ public class NoteListActivity extends AppCompatActivity {
     protected void onPostResume() {
         super.onPostResume();
         //_noteInfoArrayAdapter.notifyDataSetChanged();
+        _noteRecyclerAdapter.notifyDataSetChanged();
+        
     }
 
     private void initializeDisplayContent() {
@@ -69,7 +73,9 @@ public class NoteListActivity extends AppCompatActivity {
         final LinearLayoutManager notesLayoutManager = new LinearLayoutManager(this);
         recyclerNotes.setLayoutManager(notesLayoutManager);
 
-
+        List<NoteInfo> noteInfoList = DataManager.getInstance().getNotes();
+        _noteRecyclerAdapter = new NoteRecyclerAdapter(this,noteInfoList);
+        recyclerNotes.setAdapter(_noteRecyclerAdapter);
 
     }
 }
