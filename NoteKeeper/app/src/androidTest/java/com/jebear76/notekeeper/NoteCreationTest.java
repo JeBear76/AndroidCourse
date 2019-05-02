@@ -29,7 +29,7 @@ public class NoteCreationTest {
     }
 
     @Rule
-    public ActivityTestRule<NoteListActivity> _noteListActivityRule = new ActivityTestRule<>(NoteListActivity.class);
+    public ActivityTestRule<MainActivity> _noteListActivityRule = new ActivityTestRule<>(MainActivity.class);
 
     @Test
     public void createNewNote(){

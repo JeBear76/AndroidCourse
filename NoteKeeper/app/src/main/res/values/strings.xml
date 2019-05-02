@@ -5,4 +5,17 @@
     <string name="note_body_hint">Note Body</string>
     <string name="title_hint">Title</string>
     <string name="view_note_into_action">com.jebear76.notekeeper.VIEW_NOTE_INFO</string>
+    <string name="menu_email_note">Email Note</string>
+    <string name="menu_next">Next Note</string>
+    <string name="title_activity_main">Note Keeper</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+
+    <string name="menu_share">Share</string>
+    <string name="menu_send">Send</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_courses">Courses</string>
 </resources>

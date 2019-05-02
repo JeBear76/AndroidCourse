@@ -1,16 +1,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.jebear76.notekeeper.NoteActivity">
+    tools:context=".NoteActivity">
     <item
         android:id="@+id/menu_action_send_mail"
         android:icon="@android:drawable/sym_action_email"
-        android:title="Email Note"
-        app:showAsAction="always" />
+        android:title="@string/menu_email_note"
+        app:showAsAction="ifRoom|withText" />
     <item
-        android:id="@+id/menu_action_cancel"
-        android:icon="@android:drawable/ic_menu_close_clear_cancel"
+        android:id="@+id/menu_action_next"
+        android:icon="@android:drawable/ic_media_next"
+        android:title="@string/menu_next"
+        app:showAsAction="ifRoom|withText" />
+    <item
+        android:id="@+id/menu_action_save"
+        android:icon="@android:drawable/ic_menu_save"
         android:orderInCategory="101"
-        android:title="@android:string/cancel"
-        app:showAsAction="always" />
+        android:title="@android:string/ok"
+        app:showAsAction="ifRoom|withText" />
 </menu>

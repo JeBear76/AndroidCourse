@@ -7,6 +7,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -24,8 +25,9 @@ public class NoteActivity extends AppCompatActivity {
     private EditText _textTitle;
     private EditText _textBody;
     private int _position;
-    private boolean _isCancelling;
+    private boolean _isCancelling = true;
     private NoteInfo _originalNoteInfo;
+    private List<CourseInfo> _courses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,8 +36,8 @@ public class NoteActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         _spinnerCourses = (Spinner) findViewById(R.id.spinner_courses);
-        List<CourseInfo> courses = DataManager.getInstance().getCourses();
-        ArrayAdapter<CourseInfo> adapterCourses = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, courses);
+        _courses = DataManager.getInstance().getCourses();
+        ArrayAdapter<CourseInfo> adapterCourses = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, _courses);
         adapterCourses.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         _spinnerCourses.setAdapter(adapterCourses);
 
@@ -49,11 +51,15 @@ public class NoteActivity extends AppCompatActivity {
         _textTitle = findViewById(R.id.editText_note_title);
         _textBody = findViewById(R.id.editText_note_body);
 
+        displayNote();
+    }
+
+    private void displayNote() {
         if (!_isNewNote) {
             _textTitle.setText(_noteInfo.getTitle());
             _textBody.setText(_noteInfo.getBody());
 
-            int courseIndex = courses.indexOf(_noteInfo.getCourse());
+            int courseIndex = _courses.indexOf(_noteInfo.getCourse());
             _spinnerCourses.setSelection(courseIndex);
         }
     }
@@ -96,18 +102,34 @@ public class NoteActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if (id == R.id.menu_action_send_mail) {
-            _isCancelling = true;
-
+        if(id == R.id.menu_action_next){
+            moveNext();
+        } else if (id == R.id.menu_action_send_mail) {
             sendEmail();
-        }
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.menu_action_cancel) {
-            _isCancelling = true;
+        } else if (id == R.id.menu_action_save) {
+            _isCancelling = false;
             finish();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem menuItem = menu.findItem(R.id.menu_action_next);
+        int lastNotePosition = DataManager.getInstance().getNotes().size() - 1;
+        menuItem.setEnabled(_position < lastNotePosition);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    private void moveNext() {
+        saveNote();
+        _position++;
+        _noteInfo = DataManager.getInstance().getNotes().get(_position);
+
+        saveOriginalNote();
+        displayNote();
+        invalidateOptionsMenu();
     }
 
     private void sendEmail() {
