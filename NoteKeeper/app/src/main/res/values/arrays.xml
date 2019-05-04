@@ -1,0 +1,24 @@
+<resources>
+    <!-- Reply Preference -->
+    <string-array name="reply_entries">
+        <item>Reply</item>
+        <item>Reply to all</item>
+    </string-array>
+
+    <string-array name="reply_values">
+        <item>reply</item>
+        <item>reply_all</item>
+    </string-array>
+    <string-array name="pref_favorite_network_options">
+        <item>Facebook</item>
+        <item>MySpace</item>
+        <item>Actual humans</item>
+        <item>My Dog</item>
+    </string-array>
+    <string-array name="pref_favorite_network_option_values">
+        <item>https://www.facebook.com/</item>
+        <item>https://myspace.com/</item>
+        <item></item>
+        <item>http://www.EddieTheBear.co.za</item>
+    </string-array>
+</resources>

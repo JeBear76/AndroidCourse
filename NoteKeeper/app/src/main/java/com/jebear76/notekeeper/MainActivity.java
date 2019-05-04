@@ -1,21 +1,27 @@
 package com.jebear76.notekeeper;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
-import android.support.v4.view.GravityCompat;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.view.MenuItem;
-import android.support.design.widget.NavigationView;
-import android.support.v4.widget.DrawerLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import android.preference.PreferenceManager;
+import android.view.View;
+import androidx.core.view.GravityCompat;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import android.view.MenuItem;
+import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
+
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -61,11 +67,24 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    protected void onPostResume() {
-        super.onPostResume();
+    protected void onResume() {
+        super.onResume();
         //_noteInfoArrayAdapter.notifyDataSetChanged();
         _noteRecyclerAdapter.notifyDataSetChanged();
+        updateNavHeader();
 
+    }
+
+    private void updateNavHeader() {
+        NavigationView nav = findViewById(R.id.nav_view);
+        View headerView = nav.getHeaderView(0);
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String username = sharedPreferences.getString("user_display_name","");
+        String emailAddress = sharedPreferences.getString("user_email_address", "");
+
+        ((TextView)headerView.findViewById(R.id.nav_header_username)).setText(username);
+        ((TextView)headerView.findViewById(R.id.nav_header_email)).setText(emailAddress);
     }
 
     private void initializeDisplayContent() {
@@ -126,6 +145,7 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
 
@@ -143,7 +163,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_courses) {
             displayCourses();
         } else if (id == R.id.nav_share) {
-
+            handleShare();
         } else if (id == R.id.nav_send) {
 
         }
@@ -151,5 +171,11 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void handleShare() {
+        Snackbar.make(findViewById(R.id.list_notes),
+                PreferenceManager.getDefaultSharedPreferences(this).getString("user_favorite_social_network","No preference found"),
+                Snackbar.LENGTH_LONG).show();
     }
 }
