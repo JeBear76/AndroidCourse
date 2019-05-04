@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity
 
         _recyclerView = findViewById(R.id.list_notes);
         _linearLayoutManager = new LinearLayoutManager(this);
-        _gridLayoutManager = new GridLayoutManager(this,2);
+        _gridLayoutManager = new GridLayoutManager(this,getResources().getInteger(R.integer.course_grid_span));
 
         List<NoteInfo> noteInfoList = DataManager.getInstance().getNotes();
         _noteRecyclerAdapter = new NoteRecyclerAdapter(this,noteInfoList);
