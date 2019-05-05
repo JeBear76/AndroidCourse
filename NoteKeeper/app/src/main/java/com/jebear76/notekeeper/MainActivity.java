@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initializeDisplayContent() {
-
+        DataManager.getInstance().loadFromDatabase(_noteKeeperOpenHelper);
         _recyclerView = findViewById(R.id.list_notes);
         _linearLayoutManager = new LinearLayoutManager(this);
         _gridLayoutManager = new GridLayoutManager(this,getResources().getInteger(R.integer.course_grid_span));
@@ -123,8 +123,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void displayNotes() {
-        _noteKeeperOpenHelper.getReadableDatabase();
-
         _recyclerView.setLayoutManager(_linearLayoutManager);
         _recyclerView.setAdapter(_noteRecyclerAdapter);
 
