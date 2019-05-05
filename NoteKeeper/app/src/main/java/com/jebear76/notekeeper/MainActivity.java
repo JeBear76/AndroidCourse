@@ -32,6 +32,13 @@ public class MainActivity extends AppCompatActivity
     private LinearLayoutManager _linearLayoutManager;
     private CourseRecyclerAdapter _courseRecyclerAdapter;
     private GridLayoutManager _gridLayoutManager;
+    private NoteKeeperOpenHelper _noteKeeperOpenHelper;
+
+    @Override
+    protected void onDestroy() {
+        _noteKeeperOpenHelper.close();
+        super.onDestroy();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +46,8 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        _noteKeeperOpenHelper = new NoteKeeperOpenHelper(this);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
 
@@ -114,8 +123,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void displayNotes() {
+        _noteKeeperOpenHelper.getReadableDatabase();
+
         _recyclerView.setLayoutManager(_linearLayoutManager);
         _recyclerView.setAdapter(_noteRecyclerAdapter);
+
         setNavMenuSelection(R.id.nav_notes);
     }
 
