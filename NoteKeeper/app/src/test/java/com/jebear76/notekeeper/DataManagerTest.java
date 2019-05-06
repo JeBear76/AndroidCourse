@@ -18,7 +18,6 @@ public class DataManagerTest {
     @Before
     public void setUp() throws Exception{
         _dm.getNotes().clear();
-        _dm.initializeExampleNotes();;
     }
 
     @Test

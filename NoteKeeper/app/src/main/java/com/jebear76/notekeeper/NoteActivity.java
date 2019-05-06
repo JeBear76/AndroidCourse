@@ -4,8 +4,15 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
+
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,7 +26,8 @@ import com.jebear76.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 
 import java.util.List;
 
-public class NoteActivity extends AppCompatActivity {
+public class NoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+    public final int LOADER_NOTES = 0;
     private final String TAG = getClass().getSimpleName();
     public static final String NOTE_INFO = "com.jebear76.notekeeper.NOTE_INFO";
     public static final String NOTE_ID = "com.jebear76.notekeeper.NOTE_ID";
@@ -50,9 +58,9 @@ public class NoteActivity extends AppCompatActivity {
         _noteKeeperOpenHelper = new NoteKeeperOpenHelper(this);
 
         setContentView(R.layout.activity_note);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        _spinnerCourses = (Spinner) findViewById(R.id.spinner_courses);
+        _spinnerCourses = findViewById(R.id.spinner_courses);
 
         _courseCursorAdapter = new SimpleCursorAdapter(this,
                 android.R.layout.simple_spinner_item,
@@ -63,14 +71,18 @@ public class NoteActivity extends AppCompatActivity {
         _courseCursorAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         _spinnerCourses.setAdapter(_courseCursorAdapter);
 
+        _textTitle = findViewById(R.id.editText_note_title);
+        _textBody = findViewById(R.id.editText_note_body);
+
         loadCourseData();
 
         readDisplayStateValues();
 
-        _textTitle = findViewById(R.id.editText_note_title);
-        _textBody = findViewById(R.id.editText_note_body);
+        loadNote();
+    }
 
-        displayNote();
+    private void loadNote() {
+        LoaderManager.getInstance(this).initLoader(LOADER_NOTES, null, this);
     }
 
     private void loadCourseData() {
@@ -85,8 +97,6 @@ public class NoteActivity extends AppCompatActivity {
         if (!_isNewNote && _noteCursor.moveToNext()) {
             _textTitle.setText(_noteCursor.getString(_noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE)));
             _textBody.setText(_noteCursor.getString(_noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TEXT)));
-
-
             int courseIndex = getIndexOfCourseId(_noteCursor.getString(_noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID)));
             _spinnerCourses.setSelection(courseIndex);
         }
@@ -119,27 +129,13 @@ public class NoteActivity extends AppCompatActivity {
         Intent intent = getIntent();
 
         _currentID = intent.getIntExtra(NoteActivity.NOTE_ID, POSITION_NOT_SET);
-        Log.i(TAG, "_currentID:" + _currentID);
+        //Log.i(TAG, "_currentID:" + _currentID);
         _isNewNote = _currentID == POSITION_NOT_SET;
-        Log.i(TAG, "_isNewNote:" + _isNewNote);
+        //Log.i(TAG, "_isNewNote:" + _isNewNote);
         if (_isNewNote) {
             _currentID = DataManager.getInstance().createNewNote();
         }
-        loadNoteData();
     }
-
-    private void loadNoteData() {
-        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
-
-        String selection = NoteInfoEntry._ID + " = ?";
-        String[] selectionArgs = { Integer.toString(_currentID) };
-
-        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_NOTE_TEXT, NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry._ID};
-
-        _noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns,selection,selectionArgs,null,null,null );
-
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -207,7 +203,6 @@ public class NoteActivity extends AppCompatActivity {
         }
 
         saveNote();
-
     }
 
     private void saveNote() {
@@ -220,5 +215,53 @@ public class NoteActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(NOTE_INFO, _originalNoteInfo);
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        CursorLoader cursorLoader = null;
+        if(id == LOADER_NOTES) {
+            cursorLoader = createCursorLoaderNotes();
+        }
+        return cursorLoader;
+    }
+
+    private Cursor loadNoteData() {
+        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
+
+        String selection = NoteInfoEntry._ID + " = ?";
+        String[] selectionArgs = { Integer.toString(_currentID) };
+
+        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_NOTE_TEXT, NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry._ID};
+
+        return  db.query(NoteInfoEntry.TABLE_NAME, noteColumns,selection,selectionArgs,null,null,null );
+    }
+
+    private CursorLoader createCursorLoaderNotes() {
+        return new CursorLoader(this){
+            @Override
+            public Cursor loadInBackground() {
+                return loadNoteData();
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        if(loader.getId() == LOADER_NOTES){
+            _noteCursor = data;
+            displayNote();
+        }
+
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        if(loader.getId() == LOADER_NOTES){
+            if(_noteCursor != null){
+                _noteCursor.close();
+            }
+        }
     }
 }
