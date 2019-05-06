@@ -30,7 +30,7 @@ public class DataManager {
 
     public static void loadFromDatabase(NoteKeeperOpenHelper noteKeeperOpenHelper) {
         SQLiteDatabase db = noteKeeperOpenHelper.getReadableDatabase();
-        final String[] courseColumns = {CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
+        final String[] courseColumns = {CourseInfoEntry._ID, CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
         final String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE;
         final Cursor courseCursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, courseOrderBy);
         loadCoursesFromDatabase(courseCursor);
@@ -59,13 +59,14 @@ public class DataManager {
     }
 
     private static void loadCoursesFromDatabase(Cursor courseCursor) {
+        final int _id_index = courseCursor.getColumnIndex(CourseInfoEntry._ID);
         final int course_id_index = courseCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
         final int course_title_index = courseCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
         final DataManager dm = DataManager.getInstance();
         dm.mCourses.clear();
         while (courseCursor.moveToNext()){
             dm.mCourses.add(new CourseInfo(courseCursor.getString(course_id_index),
-                    courseCursor.getString(course_title_index), null));
+                    courseCursor.getString(course_title_index), null, courseCursor.getInt(_id_index)));
         }
         courseCursor.close();
     }

@@ -14,11 +14,13 @@ public final class CourseInfo implements Parcelable {
     private final String mCourseId;
     private final String mTitle;
     private final List<ModuleInfo> mModules;
+    private int mId;
 
-    public CourseInfo(String courseId, String title, List<ModuleInfo> modules) {
+    public CourseInfo(String courseId, String title, List<ModuleInfo> modules, int id) {
         mCourseId = courseId;
         mTitle = title;
         mModules = modules;
+        mId = id;
     }
 
     public CourseInfo(Parcel source) {
@@ -26,6 +28,7 @@ public final class CourseInfo implements Parcelable {
         mTitle = source.readString();
         mModules = new ArrayList<>();
         source.readTypedList(mModules,ModuleInfo.CREATOR);
+        mId = source.readInt();
     }
 
     public String getCourseId() {
@@ -93,6 +96,7 @@ public final class CourseInfo implements Parcelable {
         dest.writeString(mCourseId);
         dest.writeString(mTitle);
         dest.writeTypedList(mModules);
+        dest.writeInt(mId);
     }
 
     public final static Parcelable.Creator<CourseInfo> CREATOR = new Creator<CourseInfo>() {

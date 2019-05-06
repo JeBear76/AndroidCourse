@@ -2,6 +2,9 @@ package com.jebear76.notekeeper;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -25,6 +28,8 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import static com.jebear76.notekeeper.NoteKeeperDatabaseContract.*;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
     private NoteRecyclerAdapter _noteRecyclerAdapter;
@@ -33,6 +38,7 @@ public class MainActivity extends AppCompatActivity
     private CourseRecyclerAdapter _courseRecyclerAdapter;
     private GridLayoutManager _gridLayoutManager;
     private NoteKeeperOpenHelper _noteKeeperOpenHelper;
+    private Cursor _noteCursor;
 
     @Override
     protected void onDestroy() {
@@ -78,10 +84,21 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-        //_noteInfoArrayAdapter.notifyDataSetChanged();
-        _noteRecyclerAdapter.notifyDataSetChanged();
+
+        loadNotes();
+
         updateNavHeader();
 
+    }
+
+    private void loadNotes() {
+        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
+
+        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry._ID};
+        final String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + ", " + NoteInfoEntry.COLUMN_NOTE_TITLE;
+        _noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, noteOrderBy);
+
+        _noteRecyclerAdapter.changeCursor(_noteCursor);
     }
 
     private void updateNavHeader() {
@@ -102,10 +119,12 @@ public class MainActivity extends AppCompatActivity
         _linearLayoutManager = new LinearLayoutManager(this);
         _gridLayoutManager = new GridLayoutManager(this,getResources().getInteger(R.integer.course_grid_span));
 
-        List<NoteInfo> noteInfoList = DataManager.getInstance().getNotes();
-        _noteRecyclerAdapter = new NoteRecyclerAdapter(this,noteInfoList);
+
+        _noteRecyclerAdapter = new NoteRecyclerAdapter(this, null);
+
         List<CourseInfo> courseInfoList = DataManager.getInstance().getCourses();
         _courseRecyclerAdapter = new CourseRecyclerAdapter(this, courseInfoList);
+
         displayNotes();
 
     }
