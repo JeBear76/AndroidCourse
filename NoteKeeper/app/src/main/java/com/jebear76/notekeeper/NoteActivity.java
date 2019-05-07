@@ -1,8 +1,10 @@
 package com.jebear76.notekeeper;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -37,12 +39,14 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     private EditText _textTitle;
     private EditText _textBody;
     private int _currentID;
-    private boolean _isCancelling = true;
     private NoteInfo _originalNoteInfo;
     private List<CourseInfo> _courses;
     private NoteKeeperOpenHelper _noteKeeperOpenHelper;
     private Cursor _noteCursor;
     private SimpleCursorAdapter _courseCursorAdapter;
+
+    private boolean _isCancelling = true;
+    private boolean _isDeleting = false;
 
     @Override
     protected void onDestroy() {
@@ -126,23 +130,14 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
         _originalNoteInfo = savedInstanceState.getParcelable(NOTE_INFO);
     }
 
-    private void saveOriginalNote() {
-        if (_isNewNote)
-            return;
-        _originalNoteInfo = new NoteInfo(_noteInfo);
-    }
-
     private void readDisplayStateValues() {
         Intent intent = getIntent();
 
         _currentID = intent.getIntExtra(NoteActivity.NOTE_ID, POSITION_NOT_SET);
-        //Log.i(TAG, "_currentID:" + _currentID);
+
         _isNewNote = _currentID == POSITION_NOT_SET;
-        //Log.i(TAG, "_isNewNote:" + _isNewNote);
-        if (_isNewNote) {
-            _currentID = DataManager.getInstance().createNewNote();
-        }
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -164,6 +159,10 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
         } else if (id == R.id.menu_action_save) {
             _isCancelling = false;
             finish();
+        }else if(id == R.id.menu_action_delete){
+            _isCancelling = false;
+            _isDeleting = true;
+            finish();
         }
 
         return super.onOptionsItemSelected(item);
@@ -171,18 +170,19 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        MenuItem menuItem = menu.findItem(R.id.menu_action_next);
-        int lastNotePosition = DataManager.getInstance().getNotes().size() - 1;
-        menuItem.setEnabled(_currentID < lastNotePosition);
+        MenuItem menuItem = menu.findItem(R.id.menu_action_delete);
+
+        menuItem.setEnabled(!_isNewNote);
+
+//        int lastNotePosition = DataManager.getInstance().getNotes().size() - 1;
+//        menuItem.setEnabled(_currentID < lastNotePosition);
+
         return super.onPrepareOptionsMenu(menu);
     }
 
     private void moveNext() {
         saveNote();
-        _currentID++;
-        _noteInfo = DataManager.getInstance().getNotes().get(_currentID);
 
-        saveOriginalNote();
         displayNote();
         invalidateOptionsMenu();
     }
@@ -201,21 +201,76 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onPause() {
         super.onPause();
         if (_isCancelling) {
-            if (_isNewNote) {
-                DataManager.getInstance().removeNote(_currentID);
-            } else {
-                _noteInfo = _originalNoteInfo;
-            }
             return;
         }
+        if (_isDeleting) {
+            deleteNote();
+        } else {
+            if (_isNewNote) {
+                createNote();
+            } else {
+                saveNote();
+            }
+        }
+    }
 
-        saveNote();
+    private void deleteNote() {
+        final String[] whereArgs = {Integer.toString(_currentID)};
+        final String whereClause = NoteInfoEntry._ID + " = ?";
+        final AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                SQLiteDatabase db = _noteKeeperOpenHelper.getWritableDatabase();
+
+                db.delete(NoteInfoEntry.TABLE_NAME, whereClause, whereArgs);
+
+                return null;
+            }
+        };
+
+        task.execute();
+    }
+
+    private void createNote(){
+        final ContentValues contentValues = new ContentValues();
+        contentValues.put(NoteInfoEntry.COLUMN_COURSE_ID, getSelectedCourseId());
+        contentValues.put(NoteInfoEntry.COLUMN_NOTE_TITLE, _textTitle.getText().toString());
+        contentValues.put(NoteInfoEntry.COLUMN_NOTE_TEXT, _textBody.getText().toString());
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                SQLiteDatabase db = _noteKeeperOpenHelper.getWritableDatabase();
+                db.insert(NoteInfoEntry.TABLE_NAME, null, contentValues);
+                return null;
+            }
+        };
+        task.execute();
     }
 
     private void saveNote() {
-        _noteInfo.setCourse((CourseInfo) _spinnerCourses.getSelectedItem());
-        _noteInfo.setTitle(_textTitle.getText().toString());
-        _noteInfo.setText(_textBody.getText().toString());
+        final ContentValues contentValues = new ContentValues();
+        contentValues.put(NoteInfoEntry.COLUMN_COURSE_ID, getSelectedCourseId());
+        contentValues.put(NoteInfoEntry.COLUMN_NOTE_TITLE, _textTitle.getText().toString());
+        contentValues.put(NoteInfoEntry.COLUMN_NOTE_TEXT, _textBody.getText().toString());
+
+        final String[] whereArgs = {Integer.toString(_currentID)};
+        final String whereClause = NoteInfoEntry._ID + " = ?";
+
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                SQLiteDatabase db = _noteKeeperOpenHelper.getWritableDatabase();
+                db.update(NoteInfoEntry.TABLE_NAME, contentValues, whereClause, whereArgs);
+                return null;
+            }
+        };
+    }
+
+    private String getSelectedCourseId() {
+        int position = _spinnerCourses.getSelectedItemPosition();
+        Cursor courseCursorAdapterCursor = _courseCursorAdapter.getCursor();
+        courseCursorAdapterCursor.moveToPosition(position);
+        return courseCursorAdapterCursor.getString(courseCursorAdapterCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID));
     }
 
     @Override
