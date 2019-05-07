@@ -4,23 +4,32 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.List;
+import com.jebear76.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 
 public class CourseRecyclerAdapter extends RecyclerView.Adapter<CourseRecyclerAdapter.ViewHolder>{
 
     private final Context _context;
     private final LayoutInflater _layoutInflater;
-    private List<CourseInfo> _courseInfoList;
+    private Cursor _courseInfoCursor;
 
-    public CourseRecyclerAdapter(Context context, List<CourseInfo> courseInfoList) {
+    public CourseRecyclerAdapter(Context context, Cursor courseInfoCursor) {
         _context = context;
-        _courseInfoList = courseInfoList;
+        _courseInfoCursor = courseInfoCursor;
         _layoutInflater = LayoutInflater.from(_context);
+    }
+
+    public void changeCursor(Cursor courseInfoCursor){
+        if(_courseInfoCursor != null)
+            _courseInfoCursor.close();
+        _courseInfoCursor = courseInfoCursor;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -32,13 +41,13 @@ public class CourseRecyclerAdapter extends RecyclerView.Adapter<CourseRecyclerAd
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
-        CourseInfo courseInfo = _courseInfoList.get(position);
-        viewHolder._textCourse.setText(courseInfo.getTitle());
+        _courseInfoCursor.moveToPosition(position);
+        viewHolder._textCourse.setText(_courseInfoCursor.getString(_courseInfoCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE)));
     }
 
     @Override
     public int getItemCount() {
-        return _courseInfoList.size();
+        return _courseInfoCursor.getCount();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder{

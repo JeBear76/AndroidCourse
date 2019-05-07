@@ -11,39 +11,39 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.List;
-
 import static com.jebear76.notekeeper.NoteKeeperDatabaseContract.*;
 
 public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapter.ViewHolder>{
 
     private final Context _context;
     private final LayoutInflater _layoutInflater;
-    private Cursor _cursor;
-    private int _course_id_index;
+    private Cursor _noteCursor;
     private int _note_title_index;
     private int _note_id_index;
+    private int _course_title_index;
 
-    public NoteRecyclerAdapter(Context context, Cursor cursor) {
+    public NoteRecyclerAdapter(Context context, Cursor noteCursor, Cursor courseCursor) {
         _context = context;
-        _cursor = cursor;
+        _noteCursor = noteCursor;
         _layoutInflater = LayoutInflater.from(_context);
         populateColumnPositions();
     }
 
     private void populateColumnPositions() {
-        if(_cursor == null)
+        if(_noteCursor == null)
             return;
-        _course_id_index = _cursor.getColumnIndex(NoteInfoEntry.COLUMN_COURSE_ID);
-        _note_title_index = _cursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
-        _note_id_index = _cursor.getColumnIndex(NoteInfoEntry._ID);
+
+        _note_title_index = _noteCursor.getColumnIndex(NoteInfoEntry.COLUMN_NOTE_TITLE);
+        _note_id_index = _noteCursor.getColumnIndex(NoteInfoEntry._ID);
+        _course_title_index = _noteCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
     }
 
-    public void changeCursor(Cursor cursor){
-        if(_cursor!= null)
-        _cursor.close();
+    public void changeNoteCursor(Cursor cursor){
+        if(_noteCursor != null){
+            _noteCursor.close();
+        }
 
-        _cursor = cursor;
+        _noteCursor = cursor;
         populateColumnPositions();
         notifyDataSetChanged();
     }
@@ -57,17 +57,19 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
-        if(_cursor.moveToPosition(position)){
-            viewHolder._textCourse.setText(_cursor.getString(_course_id_index));
-            viewHolder._textTitle.setText(_cursor.getString(_note_title_index));
-            viewHolder._currentID = _cursor.getInt(_note_id_index);
+        if(_noteCursor.isClosed())
+            return;
+        if(_noteCursor.moveToPosition(position)){
+            viewHolder._textCourse.setText(_noteCursor.getString(_course_title_index));
+            viewHolder._textTitle.setText(_noteCursor.getString(_note_title_index));
+            viewHolder._currentID = _noteCursor.getInt(_note_id_index);
         }
     }
 
     @Override
     public int getItemCount() {
-        if (_cursor != null)
-            return _cursor.getCount();
+        if (_noteCursor != null)
+            return _noteCursor.getCount();
         return 0;
     }
 

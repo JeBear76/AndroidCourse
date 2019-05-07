@@ -4,11 +4,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,19 +31,18 @@ import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
 import android.widget.TextView;
 
-import java.util.List;
-
 import static com.jebear76.notekeeper.NoteKeeperDatabaseContract.*;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, LoaderManager.LoaderCallbacks<Cursor> {
+    public static final int LOADER_NOTES = 0;
+    public static final int LOADER_COURSES = 1;
     private NoteRecyclerAdapter _noteRecyclerAdapter;
     private RecyclerView _recyclerView;
     private LinearLayoutManager _linearLayoutManager;
     private CourseRecyclerAdapter _courseRecyclerAdapter;
     private GridLayoutManager _gridLayoutManager;
     private NoteKeeperOpenHelper _noteKeeperOpenHelper;
-    private Cursor _noteCursor;
 
     @Override
     protected void onDestroy() {
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity
 
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+
         drawer.addDrawerListener(toggle);
 
         toggle.syncState();
@@ -79,6 +82,9 @@ public class MainActivity extends AppCompatActivity
                 startActivity(intent);
             }
         });
+        LoaderManager.getInstance(this).initLoader(LOADER_NOTES,null,this);
+
+        LoaderManager.getInstance(this).initLoader(LOADER_COURSES,null,this);
 
         initializeDisplayContent();
     }
@@ -87,20 +93,24 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
 
-        loadNotes();
+        LoaderManager.getInstance(this).restartLoader(LOADER_NOTES, null,this);
+        LoaderManager.getInstance(this).restartLoader(LOADER_COURSES, null,this);
 
         updateNavHeader();
 
     }
 
-    private void loadNotes() {
+    private Cursor loadNotes() {
         SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
 
-        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry._ID};
-        final String noteOrderBy = NoteInfoEntry.COLUMN_COURSE_ID + ", " + NoteInfoEntry.COLUMN_NOTE_TITLE;
-        _noteCursor = db.query(NoteInfoEntry.TABLE_NAME, noteColumns, null, null, null, null, noteOrderBy);
+        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.qualify(NoteInfoEntry._ID), CourseInfoEntry.COLUMN_COURSE_TITLE};
 
-        _noteRecyclerAdapter.changeCursor(_noteCursor);
+        final String noteOrderBy = NoteInfoEntry.qualify(NoteInfoEntry.COLUMN_COURSE_ID) + ", " + NoteInfoEntry.COLUMN_NOTE_TITLE;
+
+        final String joinSelectSource = NoteInfoEntry.TABLE_NAME + " JOIN " + CourseInfoEntry.TABLE_NAME + " ON "
+                                                + NoteInfoEntry.qualify(NoteInfoEntry.COLUMN_COURSE_ID) + " = " + CourseInfoEntry.qualify(CourseInfoEntry.COLUMN_COURSE_ID);
+
+        return  db.query(joinSelectSource, noteColumns, null, null, null, null, noteOrderBy);
     }
 
     private void updateNavHeader() {
@@ -116,16 +126,14 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initializeDisplayContent() {
-        DataManager.getInstance().loadFromDatabase(_noteKeeperOpenHelper);
         _recyclerView = findViewById(R.id.list_notes);
         _linearLayoutManager = new LinearLayoutManager(this);
         _gridLayoutManager = new GridLayoutManager(this,getResources().getInteger(R.integer.course_grid_span));
 
 
-        _noteRecyclerAdapter = new NoteRecyclerAdapter(this, null);
+        _noteRecyclerAdapter = new NoteRecyclerAdapter(this, null, null);
 
-        List<CourseInfo> courseInfoList = DataManager.getInstance().getCourses();
-        _courseRecyclerAdapter = new CourseRecyclerAdapter(this, courseInfoList);
+        _courseRecyclerAdapter = new CourseRecyclerAdapter(this, null);
 
         displayNotes();
 
@@ -208,5 +216,72 @@ public class MainActivity extends AppCompatActivity
         Snackbar.make(findViewById(R.id.list_notes),
                 PreferenceManager.getDefaultSharedPreferences(this).getString("user_favorite_social_network","No preference found"),
                 Snackbar.LENGTH_LONG).show();
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        CursorLoader cursorLoader = null;
+        if(id == LOADER_NOTES){
+            cursorLoader = createNoteCursorLoader();
+        }
+        if(id==LOADER_COURSES){
+            cursorLoader = createCourseCursorLoader();
+        }
+        return cursorLoader;
+    }
+
+    private CursorLoader createCourseCursorLoader() {
+        return new CursorLoader(this){
+            @Override
+            public Cursor loadInBackground() {
+                return loadCourses();
+            }
+        };
+    }
+
+    private Cursor loadCourses() {
+        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
+        final String[] courseColumns = {CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
+        final String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE;
+        return db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, courseOrderBy);
+    }
+
+    private CursorLoader createNoteCursorLoader() {
+        return new CursorLoader(this){
+            @Override
+            public Cursor loadInBackground() {
+                return loadNotes();
+            }
+        };
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        int loader_id = loader.getId();
+
+        if(loader_id == LOADER_NOTES){
+            _noteRecyclerAdapter.changeNoteCursor(data);
+            return;
+        }
+
+        if(loader_id == LOADER_COURSES){
+            _courseRecyclerAdapter.changeCursor(data);
+            return;
+        }
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        int loader_id = loader.getId();
+
+        if(loader_id == LOADER_NOTES){
+            _noteRecyclerAdapter.changeNoteCursor(null);            
+            return;
+        }
+        if(loader_id == LOADER_COURSES){
+            _courseRecyclerAdapter.changeCursor(null);
+            return;
+        }
     }
 }
