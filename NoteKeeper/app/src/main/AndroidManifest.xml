@@ -9,6 +9,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <provider
+            android:name=".NoteKeeperContentProvider"
+            android:authorities="com.jebear76.notekeeper.provider"
+            android:enabled="true"
+            android:exported="true">
+        </provider>
+
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
@@ -17,6 +25,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.jebear76.notekeeper.MainActivity" />
         </activity>
+
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
@@ -27,6 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".NoteActivity"
             android:label="@string/note_activity_name"

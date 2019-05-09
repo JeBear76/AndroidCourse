@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -90,14 +91,6 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private void loadNoteAsync() {
         LoaderManager.getInstance(this).initLoader(LOADER_NOTES, null, this);
-    }
-
-    private Cursor loadCourseData() {
-        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
-        final String[] courseColumns = {CourseInfoEntry._ID, CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
-        final String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE;
-        return db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, courseOrderBy);
-
     }
 
     private void displayNote() {
@@ -293,12 +286,11 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private CursorLoader createCursorLoaderCourse() {
-        return new CursorLoader(this) {
-            @Override
-            public Cursor loadInBackground() {
-                return loadCourseData();
-            }
-        };
+        Uri uri = Uri.parse("content://com.jebear76.notekeeper.provider?query_table_name=" + CourseInfoEntry.TABLE_NAME);
+
+        final String[] courseColumns = {CourseInfoEntry._ID, CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
+        final String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE;
+        return new CursorLoader(this, uri, courseColumns, null, null, courseOrderBy);
     }
 
     private Cursor loadNoteData() {
