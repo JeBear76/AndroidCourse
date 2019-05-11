@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -23,6 +24,8 @@ import androidx.appcompat.app.ActionBarDrawerToggle;
 import android.view.MenuItem;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
+import com.jebear76.notekeeper.NoteKeeperContentProviderContract.Courses;
+import com.jebear76.notekeeper.NoteKeeperContentProviderContract.Notes;
 
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -98,19 +101,6 @@ public class MainActivity extends AppCompatActivity
 
         updateNavHeader();
 
-    }
-
-    private Cursor loadNotes() {
-        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
-
-        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.qualify(NoteInfoEntry._ID), CourseInfoEntry.COLUMN_COURSE_TITLE};
-
-        final String noteOrderBy = NoteInfoEntry.qualify(NoteInfoEntry.COLUMN_COURSE_ID) + ", " + NoteInfoEntry.COLUMN_NOTE_TITLE;
-
-        final String joinSelectSource = NoteInfoEntry.TABLE_NAME + " JOIN " + CourseInfoEntry.TABLE_NAME + " ON "
-                                                + NoteInfoEntry.qualify(NoteInfoEntry.COLUMN_COURSE_ID) + " = " + CourseInfoEntry.qualify(CourseInfoEntry.COLUMN_COURSE_ID);
-
-        return  db.query(joinSelectSource, noteColumns, null, null, null, null, noteOrderBy);
     }
 
     private void updateNavHeader() {
@@ -232,28 +222,22 @@ public class MainActivity extends AppCompatActivity
     }
 
     private CursorLoader createCourseCursorLoader() {
-        return new CursorLoader(this){
-            @Override
-            public Cursor loadInBackground() {
-                return loadCourses();
-            }
-        };
-    }
+        Uri uri = Courses.CONTENT_URI;
 
-    private Cursor loadCourses() {
-        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
-        final String[] courseColumns = {CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
-        final String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE;
-        return db.query(CourseInfoEntry.TABLE_NAME, courseColumns, null, null, null, null, courseOrderBy);
+        final String[] courseColumns = {Courses.COLUMN_COURSE_ID, Courses.COLUMN_COURSE_TITLE};
+        final String courseOrderBy = Courses.COLUMN_COURSE_TITLE;
+
+        return new CursorLoader(this, uri, courseColumns,null,null,courseOrderBy);
     }
 
     private CursorLoader createNoteCursorLoader() {
-        return new CursorLoader(this){
-            @Override
-            public Cursor loadInBackground() {
-                return loadNotes();
-            }
-        };
+        Uri uri = Notes.CONTENT_URI_EXPANDED;
+
+        final String[] noteColumns = {Notes.COLUMN_NOTE_TITLE, Notes._ID, Courses.COLUMN_COURSE_TITLE};
+
+        final String noteOrderBy = Courses.COLUMN_COURSE_TITLE + ", " + Notes.COLUMN_NOTE_TITLE;
+
+        return new CursorLoader(this, uri, noteColumns,null,null, noteOrderBy);
     }
 
     @Override

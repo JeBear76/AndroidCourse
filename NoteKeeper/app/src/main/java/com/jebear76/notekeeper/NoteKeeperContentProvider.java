@@ -6,14 +6,31 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.provider.BaseColumns;
 
 import com.jebear76.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
+import com.jebear76.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class NoteKeeperContentProvider extends ContentProvider {
     public static final String QUERY_TABLENAME = "query_table_name";
     NoteKeeperOpenHelper _noteKeeperOpenHelper;
 
-    private static UriMatcher _UriMatcher = new UriMatcher(UriMatcher.NO_MATCH)
+    private static UriMatcher _UriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+
+    public static final int COURSES = 0;
+
+    public static final int NOTES = 1;
+
+    public static final int NOTES_EXPANDED = 2;
+
+    static{
+        _UriMatcher.addURI(NoteKeeperContentProviderContract.AUTHORITY, NoteKeeperContentProviderContract.Courses.PATH, COURSES);
+        _UriMatcher.addURI(NoteKeeperContentProviderContract.AUTHORITY, NoteKeeperContentProviderContract.Notes.PATH, NOTES);
+        _UriMatcher.addURI(NoteKeeperContentProviderContract.AUTHORITY, NoteKeeperContentProviderContract.Notes.PATH_EXPANDED, NOTES_EXPANDED);
+    }
 
     public NoteKeeperContentProvider() {
 
@@ -49,8 +66,32 @@ public class NoteKeeperContentProvider extends ContentProvider {
                         String[] selectionArgs, String sortOrder) {
         Cursor cursor = null;
         SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
-        String tableName = uri.getQueryParameter(QUERY_TABLENAME);
-        cursor = db.query(tableName,projection, selection, selectionArgs,null,null,sortOrder);
+
+        int uriMatch = _UriMatcher.match(uri);
+        switch (uriMatch){
+            case COURSES: {
+                cursor = db.query(CourseInfoEntry.TABLE_NAME,projection, selection, selectionArgs,null,null,sortOrder);
+                break;
+            }
+            case NOTES: {
+                cursor = db.query(NoteInfoEntry.TABLE_NAME,projection, selection, selectionArgs,null,null, sortOrder);
+                break;
+            }
+            case NOTES_EXPANDED: {
+                List<String> columns = new ArrayList<>();
+                for (String column: projection) {
+                    columns.add(column == BaseColumns._ID || column == NoteKeeperContentProviderContract.CoursesIdColumns.COLUMN_COURSE_ID ? NoteInfoEntry.qualify(column) : column);
+                }
+                final String joinSelectSource = NoteInfoEntry.TABLE_NAME + " JOIN " + CourseInfoEntry.TABLE_NAME + " ON "
+                        + NoteInfoEntry.qualify(NoteInfoEntry.COLUMN_COURSE_ID) + " = " + CourseInfoEntry.qualify(CourseInfoEntry.COLUMN_COURSE_ID);
+
+
+                cursor = db.query(joinSelectSource,columns.toArray(new String[projection.length]), selection, selectionArgs,null,null, sortOrder);
+                break;
+            }
+        }
+
+
 
         return cursor;
     }

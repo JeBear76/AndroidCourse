@@ -28,14 +28,12 @@ public final class NoteKeeperContentProviderContract {
 
     }
 
-    public static final class Notes implements NotesColumns, BaseColumns, CoursesIdColumns{
+    public static final class Notes implements NotesColumns, BaseColumns, CoursesIdColumns, CoursesColumns{
         public static final String PATH = "notes";
         public static Uri CONTENT_URI = Uri.withAppendedPath(AUTHORITY_URI, PATH);
 
-    }
+        public static final String PATH_EXPANDED = "notes_expanded";
+        public static Uri CONTENT_URI_EXPANDED = Uri.withAppendedPath(AUTHORITY_URI, PATH_EXPANDED);
 
-    public static final class NoteSummary implements CoursesColumns, NotesColumns, CoursesIdColumns, BaseColumns{
-        public static final String PATH = "summary";
-        public static Uri CONTENT_URI = Uri.withAppendedPath(AUTHORITY_URI, PATH);
     }
 }

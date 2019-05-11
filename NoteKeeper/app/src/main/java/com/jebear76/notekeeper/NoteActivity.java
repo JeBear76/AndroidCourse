@@ -27,6 +27,8 @@ import com.jebear76.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 
 import java.util.List;
 
+import static com.jebear76.notekeeper.NoteKeeperContentProviderContract.*;
+
 public class NoteActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     public static final int LOADER_COURSES = 1;
     public final int LOADER_NOTES = 0;
@@ -286,31 +288,18 @@ public class NoteActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private CursorLoader createCursorLoaderCourse() {
-        Uri uri = Uri.parse("content://com.jebear76.notekeeper.provider?query_table_name=" + CourseInfoEntry.TABLE_NAME);
 
-        final String[] courseColumns = {CourseInfoEntry._ID, CourseInfoEntry.COLUMN_COURSE_ID, CourseInfoEntry.COLUMN_COURSE_TITLE};
-        final String courseOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE;
-        return new CursorLoader(this, uri, courseColumns, null, null, courseOrderBy);
-    }
-
-    private Cursor loadNoteData() {
-        SQLiteDatabase db = _noteKeeperOpenHelper.getReadableDatabase();
-
-        String selection = NoteInfoEntry._ID + " = ?";
-        String[] selectionArgs = { Integer.toString(_currentID) };
-
-        final String[] noteColumns = {NoteInfoEntry.COLUMN_NOTE_TITLE, NoteInfoEntry.COLUMN_NOTE_TEXT, NoteInfoEntry.COLUMN_COURSE_ID, NoteInfoEntry._ID};
-
-        return  db.query(NoteInfoEntry.TABLE_NAME, noteColumns,selection,selectionArgs,null,null,null );
+        final String[] courseColumns = {Courses._ID, Courses.COLUMN_COURSE_ID, Courses.COLUMN_COURSE_TITLE};
+        final String courseOrderBy = Courses.COLUMN_COURSE_TITLE;
+        return new CursorLoader(this, Courses.CONTENT_URI, courseColumns, null, null, courseOrderBy);
     }
 
     private CursorLoader createCursorLoaderNotes() {
-        return new CursorLoader(this){
-            @Override
-            public Cursor loadInBackground() {
-                return loadNoteData();
-            }
-        };
+        final String[] noteColumns = {Notes.COLUMN_NOTE_TITLE, Notes.COLUMN_NOTE_TEXT, Notes.COLUMN_COURSE_ID, Notes._ID};
+        final String selection = Notes._ID + " = ?";
+        final String[] selectionArgs = {Integer.toString(_currentID)};
+
+        return new CursorLoader(this, Notes.CONTENT_URI, noteColumns, selection, selectionArgs, null);
     }
 
     @Override
